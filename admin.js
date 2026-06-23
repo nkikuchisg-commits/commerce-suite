@@ -186,8 +186,9 @@ function showApp() {
 }
 $("#loginForm").addEventListener("submit", (e) => {
   e.preventDefault();
-  if ($("#loginPass").value === "demo") { try { sessionStorage.setItem("komorebi.admin", "1"); } catch (e) {} showApp(); }
-  else $("#loginErr").textContent = "パスワードが違います（demo と入力）";
+  const v = ($("#loginPass").value || "").trim().toLowerCase();
+  if (v === "" || v === "demo") { try { sessionStorage.setItem("komorebi.admin", "1"); } catch (e) {} showApp(); }
+  else $("#loginErr").textContent = "パスワードが違います（demo と入力するか、空欄のままログインしてください）";
 });
 
 /* ---------- イベント ---------- */
