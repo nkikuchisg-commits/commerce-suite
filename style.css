@@ -21,6 +21,8 @@
   --shadow-lg: 0 18px 44px rgba(44,36,32,.18);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+/* hidden属性を確実に効かせる（.login-screen / .adm-app / .cart-badge 等の display 指定に勝たせる） */
+[hidden] { display: none !important; }
 body { font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, system-ui, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.65; -webkit-font-smoothing: antialiased; }
 a { color: var(--brand-dark); }
 .yen::before { content: "¥"; }
