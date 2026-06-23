@@ -220,6 +220,15 @@ a { color: var(--brand-dark); }
 .atable tr:last-child td { border-bottom: none; }
 .atable .num { text-align: right; }
 .status-sel { font: inherit; font-size: 12px; padding: 4px 8px; border-radius: 7px; border: 1px solid #e4eaf2; background: #fff; }
+/* 状態変更：ワンクリックの横並びボタン */
+.st-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+.st-btn { font: inherit; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 7px; border: 1px solid #e4eaf2; background: #fff; cursor: pointer; white-space: nowrap; transition: all .12s; }
+.st-btn.new { color: #b45309; } .st-btn.shipped { color: #1d4ed8; } .st-btn.done { color: #15803d; } .st-btn.returned { color: #7c3aed; } .st-btn.canceled { color: #b91c1c; }
+.st-btn:not(.active):hover { border-color: currentColor; background: #f7faff; }
+.st-btn.active { color: #fff; border-color: transparent; cursor: default; }
+.st-btn.new.active { background: #d97706; } .st-btn.shipped.active { background: #2563eb; } .st-btn.done.active { background: #16a34a; } .st-btn.returned.active { background: #7c3aed; } .st-btn.canceled.active { background: #dc2626; }
+.pill.returned { background: #ede9fe; color: #6d28d9; }
+html[data-theme="dark"] .pill.returned { background: #2a2150; color: #c4b5fd; }
 .pill { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
 .pill.new { background: #fef3c7; color: #b45309; }
 .pill.shipped { background: #dbeafe; color: #1d4ed8; }

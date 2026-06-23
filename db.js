@@ -69,6 +69,8 @@ const DB = (() => {
           id: `ORD-${ymd(d)}-${++oid}`, ts: ts.toISOString(), items,
           customer: SURNAMES[Math.floor(r() * SURNAMES.length)] + " " + GIVEN[Math.floor(r() * GIVEN.length)],
           sub, shipping, total: sub + shipping, status, channel: "store",
+          // 過去データ（シード）は在庫を減らしていない＝在庫戻しの対象外
+          stockApplied: false,
         });
       }
     }
@@ -92,11 +94,34 @@ const DB = (() => {
     reseed() { data = seed(); persist(); },
     refresh() { try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.products) data = d; } catch (e) {} },
     placeOrder(order) {
+      order.stockApplied = true; // ストアでの注文は在庫を減らした＝在庫戻しの対象
       data.orders.push(order);
       order.items.forEach((it) => { const p = this.product(it.id); if (p) p.stock = Math.max(0, p.stock - it.qty); });
       persist();
     },
-    setStatus(id, status) { const o = data.orders.find((o) => o.id === id); if (o) { o.status = status; persist(); } },
+    // 状態変更。在庫の戻し/再引き当ても行い、在庫を戻したら true を返す。
+    //   キャンセル … 購入時に減らした在庫を元に戻す（在庫適用済みのときだけ）
+    //   返品       … 在庫は戻さない（再販しない想定）
+    //   キャンセル→有効化 … 在庫を再度引き当てる
+    setStatus(id, status) {
+      const o = data.orders.find((o) => o.id === id);
+      if (!o || o.status === status) return false;
+      const prev = o.status;
+      const isActive = (s) => s === "new" || s === "shipped" || s === "done";
+      let restocked = false;
+      if (status === "canceled" && o.stockApplied) {
+        o.items.forEach((it) => { const p = this.product(it.id); if (p) p.stock += it.qty; });
+        o.stockApplied = false;
+        restocked = true;
+      } else if (prev === "canceled" && isActive(status) && !o.stockApplied) {
+        o.items.forEach((it) => { const p = this.product(it.id); if (p) p.stock = Math.max(0, p.stock - it.qty); });
+        o.stockApplied = true;
+      }
+      // 返品（returned）は在庫を戻さない＝在庫の増減なし
+      o.status = status;
+      persist();
+      return restocked;
+    },
     adjustStock(id, delta) { const p = this.product(id); if (p) { p.stock = Math.max(0, p.stock + delta); persist(); } },
     setActive(id, on) { const p = this.product(id); if (p) { p.active = on; persist(); } },
     save: persist,

@@ -22,7 +22,7 @@ const today0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
 function periodOrders(days, offsetBack = 0) {
   const to = today0(); to.setDate(to.getDate() - offsetBack); to.setHours(23, 59, 59, 999);
   const from = today0(); from.setDate(from.getDate() - offsetBack - (days - 1));
-  return DB.orders().filter((o) => { const t = new Date(o.ts); return t >= from && t <= to && o.status !== "canceled"; });
+  return DB.orders().filter((o) => { const t = new Date(o.ts); return t >= from && t <= to && isSale(o); });
 }
 const sum = (arr, f) => arr.reduce((s, x) => s + f(x), 0);
 const catOf = (id) => { const p = DB.product(id); return p ? p.cat : "その他"; };
@@ -113,7 +113,10 @@ function renderBar(cur) {
   $("#barChart").innerHTML = svg || `<text class="axis-text" x="240" y="125" text-anchor="middle">データがありません</text>`;
 }
 
-const STATUS = { new: ["未発送", "new"], shipped: ["発送済み", "shipped"], done: ["完了", "done"], canceled: ["キャンセル", "canceled"] };
+const STATUS = { new: ["未発送", "new"], shipped: ["発送済み", "shipped"], done: ["完了", "done"], returned: ["返品", "returned"], canceled: ["キャンセル", "canceled"] };
+const STATUS_ORDER = ["new", "shipped", "done", "returned", "canceled"];
+// 売上・集計の対象（キャンセルと返品は除外）
+const isSale = (o) => o.status !== "canceled" && o.status !== "returned";
 function renderRecent() {
   const rows = [...DB.orders()].sort((a, b) => new Date(b.ts) - new Date(a.ts)).slice(0, 6);
   $("#recentBody").innerHTML = rows.map((o) => `<tr><td>${o.id}</td><td>${o.customer}</td><td class="num">${yen(o.total)}</td><td><span class="pill ${o.status}">${STATUS[o.status][0]}</span></td></tr>`).join("");
@@ -131,16 +134,19 @@ function renderOrders() {
     const dt = `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
     const items = o.items.map((it) => `${it.name}×${it.qty}`).join("、");
     const itemsShort = items.length > 26 ? items.slice(0, 26) + "…" : items;
-    const opts = Object.keys(STATUS).map((s) => `<option value="${s}" ${o.status === s ? "selected" : ""}>${STATUS[s][0]}</option>`).join("");
+    const btns = STATUS_ORDER.map((s) => {
+      const active = o.status === s;
+      return `<button class="st-btn ${s}${active ? " active" : ""}" data-id="${o.id}" data-status="${s}"${active ? " disabled" : ""}>${STATUS[s][0]}</button>`;
+    }).join("");
     return `<tr><td>${o.id}</td><td>${dt}</td><td>${o.customer}</td><td title="${items}">${itemsShort}</td><td class="num">${yen(o.total)}</td>
-      <td><select class="status-sel" data-id="${o.id}">${opts}</select></td></tr>`;
+      <td><div class="st-btns">${btns}</div></td></tr>`;
   }).join("") || `<tr><td colspan="6" style="text-align:center;color:#6a7a90;padding:24px">該当する注文がありません</td></tr>`;
 }
 
 /* =========================================================================
  * 商品・在庫
  * =======================================================================*/
-function soldCount(id) { return sum(DB.orders().filter((o) => o.status !== "canceled"), (o) => sum(o.items.filter((it) => it.id === id), (it) => it.qty)); }
+function soldCount(id) { return sum(DB.orders().filter(isSale), (o) => sum(o.items.filter((it) => it.id === id), (it) => it.qty)); }
 function renderProducts() {
   const ps = DB.products();
   const low = ps.filter((p) => p.stock > 0 && p.stock <= 5).length, out = ps.filter((p) => p.stock <= 0).length;
@@ -183,6 +189,8 @@ function showApp() {
   buildCatColors();
   DB.refresh();
   showSection("dash");
+  // ログイン後はダッシュボードの先頭まで自動スクロール（表示されたことが分かるように）
+  requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
 }
 $("#loginForm").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -195,7 +203,16 @@ $("#loginForm").addEventListener("submit", (e) => {
 document.querySelector(".adm-nav").addEventListener("click", (e) => { const b = e.target.closest("button[data-sec]"); if (b) showSection(b.dataset.sec); });
 $("#periodSeg").addEventListener("click", (e) => { const b = e.target.closest("button[data-period]"); if (!b) return; [...$("#periodSeg").children].forEach((x) => x.classList.toggle("active", x === b)); period = parseInt(b.dataset.period, 10); renderDashboard(); });
 $("#orderFilter").addEventListener("click", (e) => { const b = e.target.closest(".fbtn"); if (!b) return; [...$("#orderFilter").children].forEach((x) => x.classList.toggle("active", x === b)); orderFilter = b.dataset.f; renderOrders(); });
-$("#ordersBody").addEventListener("change", (e) => { const sel = e.target.closest(".status-sel"); if (sel) { DB.setStatus(sel.dataset.id, sel.value); toast("状態を更新しました"); renderOrders(); } });
+$("#ordersBody").addEventListener("click", (e) => {
+  const b = e.target.closest(".st-btn");
+  if (!b || b.disabled) return;
+  const restocked = DB.setStatus(b.dataset.id, b.dataset.status);
+  const label = STATUS[b.dataset.status][0];
+  if (b.dataset.status === "canceled") toast(restocked ? "キャンセル：在庫を戻しました" : "キャンセルにしました");
+  else if (b.dataset.status === "returned") toast("返品にしました（在庫は戻しません）");
+  else toast(`「${label}」に変更しました`);
+  renderOrders();
+});
 $("#productsBody").addEventListener("click", (e) => {
   const inc = e.target.closest("[data-inc]"), dec = e.target.closest("[data-dec]");
   if (inc) { DB.adjustStock(inc.dataset.inc, +1); renderProducts(); }

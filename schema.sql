@@ -44,7 +44,7 @@ CREATE TABLE orders (
   subtotal      INT UNSIGNED NOT NULL,
   shipping_fee  INT UNSIGNED NOT NULL DEFAULT 0,
   total         INT UNSIGNED NOT NULL,
-  status        ENUM('new','shipped','done','canceled') NOT NULL DEFAULT 'new',
+  status        ENUM('new','shipped','done','returned','canceled') NOT NULL DEFAULT 'new',
   channel       VARCHAR(20)  NOT NULL DEFAULT 'store',
   PRIMARY KEY (id),
   KEY idx_orders_ordered_at (ordered_at),
