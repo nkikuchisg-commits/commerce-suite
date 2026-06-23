@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理画面｜こもれび商店（販売データ連動ダッシュボード）</title>
+<meta name="description" content="こもれび商店の管理画面。ストアの注文データをもとにした売上ダッシュボード・注文管理・在庫管理。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="adm-body">
+
+<!-- ログイン -->
+<div class="login-screen" id="loginScreen">
+  <form class="login-card" id="loginForm">
+    <h1>こもれび商店 管理画面</h1>
+    <p class="lc-sub">Store Admin Dashboard</p>
+    <div class="login-demo">🔑 デモ用パスワード：<strong>demo</strong>（そのまま「ログイン」を押してください）</div>
+    <label class="fld"><span>パスワード</span><input type="password" id="loginPass" value="demo" autocomplete="off"></label>
+    <button type="submit" class="btn btn-primary btn-block">ログイン</button>
+    <div class="login-err" id="loginErr"></div>
+    <p style="text-align:center;margin-top:14px;font-size:12.5px"><a href="index.html">← ストアに戻る</a></p>
+  </form>
+</div>
+
+<!-- 管理アプリ本体 -->
+<div class="adm-app" id="adminApp" hidden>
+  <aside class="adm-side" id="admSide">
+    <div class="adm-brand"><span style="font-size:20px">🌿</span><span>こもれび<b>Admin</b></span></div>
+    <nav class="adm-nav">
+      <button data-sec="dash" class="active">📈 ダッシュボード</button>
+      <button data-sec="orders">🧾 注文管理</button>
+      <button data-sec="products">📦 商品・在庫</button>
+      <button data-sec="store" id="toStore">🛒 ストアを開く</button>
+    </nav>
+    <div class="side-foot">
+      <button class="adm-logout" id="reseedBtn" style="margin-bottom:8px">🔄 デモデータを初期化</button>
+      <button class="adm-logout" id="logoutBtn">ログアウト</button>
+    </div>
+  </aside>
+
+  <div class="adm-main">
+    <header class="adm-top">
+      <button class="adm-menu-btn" id="menuBtn">☰</button>
+      <h1 id="secTitle">ダッシュボード</h1>
+      <div class="at-actions">
+        <div class="seg" id="periodSeg" data-show="dash">
+          <button data-period="7">7日</button>
+          <button data-period="30" class="active">30日</button>
+          <button data-period="90">90日</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="adm-content">
+      <!-- ダッシュボード -->
+      <div id="secDash">
+        <section class="kpi-row" id="kpiRow" style="margin-bottom:18px"></section>
+        <section class="agrid-2" style="margin-bottom:18px">
+          <div class="acard"><div class="card-head"><h2>売上推移</h2><span class="card-meta" id="lineMeta"></span></div>
+            <div class="chart-wrap"><svg id="lineChart" viewBox="0 0 720 250" preserveAspectRatio="xMidYMid meet"></svg></div></div>
+          <div class="acard"><div class="card-head"><h2>カテゴリ構成比</h2></div>
+            <div class="donut-wrap"><svg id="donutChart" viewBox="0 0 200 200"></svg><ul class="legend" id="donutLegend"></ul></div></div>
+        </section>
+        <section class="agrid-2 b">
+          <div class="acard"><div class="card-head"><h2>人気商品 TOP5（数量）</h2></div>
+            <div class="chart-wrap"><svg id="barChart" viewBox="0 0 480 250" preserveAspectRatio="xMidYMid meet"></svg></div></div>
+          <div class="acard"><div class="card-head"><h2>最近の注文</h2><span class="card-meta">ストアの注文がここに入ります</span></div>
+            <div class="atable-wrap"><table class="atable"><thead><tr><th>注文番号</th><th>顧客</th><th class="num">金額</th><th>状態</th></tr></thead><tbody id="recentBody"></tbody></table></div></div>
+        </section>
+      </div>
+
+      <!-- 注文管理 -->
+      <div id="secOrders" hidden>
+        <div class="filter-bar" id="orderFilter">
+          <button class="fbtn active" data-f="all">すべて</button>
+          <button class="fbtn" data-f="new">未発送</button>
+          <button class="fbtn" data-f="shipped">発送済み</button>
+          <button class="fbtn" data-f="done">完了</button>
+          <button class="fbtn" data-f="canceled">キャンセル</button>
+        </div>
+        <div class="acard">
+          <div class="atable-wrap">
+            <table class="atable">
+              <thead><tr><th>注文番号</th><th>日時</th><th>顧客</th><th>商品</th><th class="num">金額</th><th>状態変更</th></tr></thead>
+              <tbody id="ordersBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 商品・在庫 -->
+      <div id="secProducts" hidden>
+        <div id="stockAlert"></div>
+        <div class="acard">
+          <div class="atable-wrap">
+            <table class="atable">
+              <thead><tr><th>商品</th><th>カテゴリ</th><th class="num">価格</th><th>在庫</th><th class="num">累計販売数</th><th>公開</th></tr></thead>
+              <tbody id="productsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer class="adm-foot">ストアの注文と同じデータベース（ブラウザ内）を集計しています。グラフはライブラリ不使用のバニラJS（SVG）。MySQL用の設計（schema.sql / queries.sql）も同梱。</footer>
+  </div>
+</div>
+<div class="scrim" id="admScrim"></div>
+<div id="toast" class="toast"></div>
+
+<script src="db.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>こもれび商店｜販売＆管理が連動するECサイト（サンプル）</title>
+<meta name="description" content="販売（ストア）と管理（ダッシュボード）が同じデータベースで連動するECサイトのサンプル。注文すると在庫が減り、管理画面の売上・注文に即反映されます。">
+<meta property="og:title" content="こもれび商店｜販売＆管理が連動するECサイト">
+<meta property="og:description" content="ストアと管理ダッシュボードが1つのデータで連動するサンプル。">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="mode-switch">
+  <div class="ms-wrap">
+    <span class="ms-tag">🌿 こもれび商店 — 販売＆管理 連動デモ</span>
+    <a href="admin.html">管理画面を開く →</a>
+  </div>
+</div>
+
+<header class="shop-header">
+  <div class="hwrap">
+    <a class="brand" href="#" id="homeLink"><span class="brand-mark">🌿</span><span class="brand-name">こもれび商店</span></a>
+    <p class="brand-tag">暮らしの雑貨とコーヒー</p>
+    <button class="cart-btn" id="cartBtn" aria-label="カートを開く">🛒 <span class="cart-badge" id="cartBadge" hidden>0</span></button>
+  </div>
+</header>
+
+<main id="shopView">
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>木もれ日のような、毎日に。</h1>
+      <p>つくり手の顔が見える、暮らしの道具を少しずつ。5,000円以上のお買い上げで送料無料です。</p>
+    </div>
+  </section>
+
+  <div class="shop-bar">
+    <div class="chips" id="catChips"></div>
+    <label class="sort">並べ替え
+      <select id="sortSel">
+        <option value="popular">おすすめ順</option>
+        <option value="priceAsc">価格が安い順</option>
+        <option value="priceDesc">価格が高い順</option>
+        <option value="nameAsc">名前順</option>
+      </select>
+    </label>
+  </div>
+  <div class="product-grid" id="grid"></div>
+</main>
+
+<section id="checkoutView" class="view" hidden>
+  <button class="back-link" id="backToShop">← 買い物に戻る</button>
+  <h2 class="ck-title">ご注文手続き</h2>
+  <div class="ck-layout">
+    <form class="ck-form" id="ckForm" novalidate>
+      <h3>お届け先</h3>
+      <label class="fld"><span>お名前 <em>必須</em></span><input type="text" name="name" autocomplete="name" required></label>
+      <div class="fld-row">
+        <label class="fld"><span>郵便番号 <em>必須</em></span><input type="text" name="zip" inputmode="numeric" placeholder="1500001" required></label>
+        <label class="fld"><span>電話番号 <em>必須</em></span><input type="tel" name="tel" inputmode="numeric" placeholder="09012345678" required></label>
+      </div>
+      <label class="fld"><span>ご住所 <em>必須</em></span><input type="text" name="addr" required></label>
+      <label class="fld"><span>メールアドレス <em>必須</em></span><input type="email" name="email" placeholder="example@example.com" required></label>
+      <h3 style="margin-top:18px">お支払い方法</h3>
+      <div class="pay-opts">
+        <label class="pay"><input type="radio" name="pay" value="代金引換" checked><span>代金引換</span></label>
+        <label class="pay"><input type="radio" name="pay" value="クレジットカード"><span>クレジットカード</span></label>
+        <label class="pay"><input type="radio" name="pay" value="銀行振込"><span>銀行振込</span></label>
+      </div>
+    </form>
+    <aside class="ck-summary">
+      <h3>ご注文内容</h3>
+      <div id="ckItems"></div>
+      <dl class="ck-totals" id="ckTotals"></dl>
+      <button class="btn btn-primary btn-block" id="placeOrder">この内容で注文する</button>
+      <p class="ck-note">※ サンプルのため決済・発送は行われません。注文は管理画面に反映されます。</p>
+    </aside>
+  </div>
+</section>
+
+<section id="doneView" class="view" hidden>
+  <div class="done-card">
+    <div class="done-ico">✓</div>
+    <h2>ご注文ありがとうございます</h2>
+    <p>ご注文を受け付けました。この注文は<strong>管理画面の売上・注文一覧に反映</strong>されています。</p>
+    <p class="order-no">注文番号：<strong id="orderNo"></strong></p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-primary" id="continueShop">買い物を続ける</button>
+      <a class="btn btn-ghost" href="admin.html">管理画面で確認する →</a>
+    </div>
+  </div>
+</section>
+
+<aside class="cart-drawer" id="cartDrawer" aria-label="カート">
+  <div class="cd-head"><h2>カート</h2><button class="cd-close" id="cdClose" aria-label="閉じる">✕</button></div>
+  <div class="cd-items" id="cdItems"></div>
+  <div class="cd-foot" id="cdFoot"></div>
+</aside>
+<div class="scrim" id="scrim"></div>
+
+<footer class="shop-foot">
+  <p>こもれび商店は、ECサイト＋管理画面の連動デモとして作成した架空のショップです。商品・価格・在庫はすべてサンプルです。</p>
+</footer>
+
+<div id="toast" class="toast"></div>
+<script src="db.js"></script>
+<script src="store.js"></script>
+</body>
+</html>
